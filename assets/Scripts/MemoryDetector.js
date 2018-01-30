@@ -1,6 +1,9 @@
 const MemoryDetector = {
     _inited: false,
 
+    /**
+     * 开启内存检查显示
+     */
     showMemoryStatus() {
         if (cc.sys.isNative) {
             return;

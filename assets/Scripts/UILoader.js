@@ -15,7 +15,11 @@ function initSceneRetain(texture) {
     }
     return false;
 }
-
+/**
+ * 对场景上自带的资源进行引用计数
+ * @param {*} node 计数的对象
+ * @param {*} number 计数值
+ */
 function parserPrefab(node, number) {
     // if (!(node instanceof cc.Scene)) {
     //     parserPrefabNode(node, number);
@@ -97,7 +101,11 @@ function parserPrefabNode(node, number) {
         cc.loader._cache[mask.spriteFrame._textureFilename].retain += number;
     }
 }
-
+/**
+ * 解析静态资源
+ * @param {*} item 
+ * @param {*} tag 
+ */
 function parseStaticRes(item, tag) {
     if (item instanceof cc.Texture2D) {
         cc.loader._cache[item.url].isStatic = true;
@@ -122,7 +130,11 @@ function parseStaticRes(item, tag) {
         cc.log('Object 资源加载未做处理');
     }
 }
-
+/**
+ * 解析静态预制体
+ * @param {*} node 
+ * @param {*} tag 
+ */
 function parseStaticPrefab(node, tag) {
     var prefab = node;
     if (node.data) {
@@ -138,7 +150,11 @@ function parseStaticPrefab(node, tag) {
         parseStaticPrefab(child, tag);
     });
 }
-
+/**
+ * 解析静态节点
+ * @param {*} node 
+ * @param {*} tag 
+ */
 function parseStaticNode(node, tag) {
     let sprite = node.getComponent(cc.Sprite);
     if (sprite && sprite.spriteFrame) {
@@ -231,8 +247,12 @@ function parseStaticNode(node, tag) {
     }
 }
 
-
+/**
+ * 深拷贝一个对象
+ * @param {*} obj 
+ */
 function deepCloneObj(obj) {
+    if (typeof obj !== 'object') return obj;
     var i;
     var o = Array.isArray(obj) ? [] : {};
     for (i in obj) {
@@ -386,6 +406,12 @@ var audioPath = null;
 
 const UILoader = {
 
+    /**
+     * 加载一个资源
+     * @param {*} path  资源路径
+     * @param {*} type  资源类型
+     * @param {*} callback  回调函数
+     */
     loadRes(path, type, callback) {
         cc.loader.loadRes(path, type, (err, asset) => {
             if (err) {
@@ -397,6 +423,13 @@ const UILoader = {
     },
 
 
+    /**
+     * 加载一个静态资源
+     * @param {string} path  资源路径
+     * @param {*} type 资源类型
+     * @param {*} tag 静态资源的标签
+     * @param {Function} callback 回调函数
+     */
     loadStaticRes(path, type, tag, callback) {
         if (!path || !type || !callback) {
             cc.log("参数错误");
@@ -413,10 +446,19 @@ const UILoader = {
     },
 
 
+    /**
+     * 对场景自身携带的资源进行引用计数统计
+     * @param {*} scene 
+     */
     retainScene(scene) {
         parserPrefab(scene, 1);
     },
 
+    /**
+     * 更新Sprite纹理
+     * @param {Object} target  目标节点
+     * @param {cc.SpriteFrame} spriteFrame  更新的纹理
+     */
     replaceSpriteTexture(target, spriteFrame) {
         if (!target || !spriteFrame) {
             cc.log("参数错误")
@@ -435,6 +477,14 @@ const UILoader = {
         releaseNodeRes();
     },
 
+    /**
+     * 更新Button纹理
+     * @param {*} target 目标节点
+     * @param {*} normalSprite 更新默认纹理
+     * @param {*} pressedSprite 更新按下纹理(可以为null)
+     * @param {*} hoverSprite 更新鼠标进入纹理(可以为null)
+     * @param {*} disabledSprite 更新不可用纹理(可以为null) 
+     */
     replaceButtonTexture(target, normalSprite, pressedSprite, hoverSprite, disabledSprite) {
         if (!target || !normalSprite) {
             cc.log("参数错误")
@@ -466,6 +516,12 @@ const UILoader = {
         releaseNodeRes();
     },
 
+    /**
+     * 实例化预制体
+     * @param {*} prefab  预制体
+     * @param {*} target  目标节点
+     * @param {*} callback 回调函数
+     */
     instantiate(prefab, target, callback) {
         if (!target || !callback) {
             cc.log("参数不对, 请检查参数");
@@ -475,11 +531,18 @@ const UILoader = {
         callback(node_prefab);
         parserPrefab(node_prefab, 1);
     },
-
+    /**
+     * 释放静态资源
+     * @param {*} tag 
+     */
     releaseStaticRes(tag) {
         releaseStaticRes(tag);
     },
 
+    /**
+     * 销毁节点
+     * @param {cc.Node} node 
+     */
     destroy(node) {
         if (!node instanceof cc.Node) {
             cc.log("你要销毁的不是一个节点");
@@ -490,6 +553,13 @@ const UILoader = {
         releaseNodeRes();
     },
 
+    /**
+     * 场景切换释放资源
+     *  一般用在  cc.director.EVENT_BEFORE_SCENE_LOADING加载新场景之前所触发的事件。
+     * cc.director.on(cc.director.EVENT_BEFORE_SCENE_LOADING,UILoader.beforeSceneLoading)
+     * @param {*} event 
+     * @param {*} detail 
+     */
     beforeSceneLoading(event, detail) {
         key_map = {};
         var dependAssets = event.currentTarget._scene.dependAssets;
@@ -515,7 +585,13 @@ const UILoader = {
             }
         });
     },
-
+    /**
+     * 场景切换释放资源
+     *  cc.director.EVENT_BEFORE_SCENE_LAUNCH 运行新场景之前所触发的事件
+     *  cc.director.on(cc.director.EVENT_BEFORE_SCENE_LAUNCH,UILoader.afterSceneLaunch)
+     * @param {*} event 
+     * @param {*} detail 
+     */
     afterSceneLaunch(event, detail) {
         for (var key in key_map) {
             event.currentTarget._scene.dependAssets[key] = key_map[key];
@@ -534,19 +610,32 @@ const UILoader = {
         }
         releaseNodeRes();
     },
-
+    /**
+     * 播放一个音效(结束自动删除音效)
+     * @param {*} path 音效路径名字
+     * @param {*} volume 声音大小
+     * @returns 返回音效id
+     */
     playEffect(path, volume) {
         if (!path || !volume) {
             cc.log("参数错误");
             return;
         }
         let audioID = cc.audioEngine.play(path, false, volume);
+        //设置一个音频结束后的回调
         cc.audioEngine.setFinishCallback(audioID,  (ss, ss11) => {
             cc.loader.release(cc.loader._cache[ss.target.src].url);
         });
         return audioID;
     },
 
+    /**
+     * 播放音乐(结束自动删除音效)
+     * @param {string} path 音效路径名字
+     * @param {boolean} loop 是否循环
+     * @param {number} volume 声音大小
+     * @returns 返回音效id
+     */
     playMusic(path, loop, volume) {
         if (!path || !volume) {
             cc.log("参数错误");
